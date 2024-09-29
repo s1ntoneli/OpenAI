@@ -81,15 +81,21 @@ extension StreamingSession {
             }
             let decoder = JSONDecoder()
             do {
+                print("jsonData", jsonContent)
                 let object = try decoder.decode(ResultType.self, from: jsonData)
+                print("parse success, onReceiveContent")
                 onReceiveContent?(self, object)
             } catch {
                 if let decoded = try? decoder.decode(APIErrorResponse.self, from: jsonData) {
+                    print("api error, onProcessingError")
                     onProcessingError?(self, decoded)
                 } else if index == jsonObjects.count - 1 {
+                    print("parse error, Chunk ends in a partial JSON", error)
                     previousChunkBuffer = "data: \(jsonContent)" // Chunk ends in a partial JSON
                 } else {
-                    onProcessingError?(self, error)
+                    print("parse error, nothing", error)
+                    // decode error, do not throw
+//                    onProcessingError?(self, error)
                 }
             }
         }

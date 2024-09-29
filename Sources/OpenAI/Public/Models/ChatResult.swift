@@ -73,6 +73,26 @@ public struct ChatResult: Codable, Equatable {
             case toolCalls = "tool_calls"
             case contentFilter = "content_filter"
             case functionCall = "function_call"
+            
+            public init(from decoder: Decoder) throws {
+                let container = try decoder.singleValueContainer()
+                let rawValue = try container.decode(String.self).lowercased()
+                
+                switch rawValue {
+                case "stop":
+                    self = .stop
+                case "length":
+                    self = .length
+                case "tool_calls":
+                    self = .toolCalls
+                case "content_filter":
+                    self = .contentFilter
+                case "function_call":
+                    self = .functionCall
+                default:
+                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unable to initialize FinishReason from invalid string value \(rawValue)")
+                }
+            }
         }
     }
 

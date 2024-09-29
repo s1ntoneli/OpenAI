@@ -19,21 +19,22 @@ final public class OpenAI: OpenAIProtocol {
         
         /// Optional OpenAI organization identifier. See https://platform.openai.com/docs/api-reference/authentication
         public let organizationIdentifier: String?
-        
-        /// API host. Set this property if you use some kind of proxy or your own server. Default is api.openai.com
-        public let host: String
-        public let port: Int
-        public let scheme: String
+
+        /// API host. Set this property if you use some kind of proxy or your own server. Default is https://api.openai.com
+        public let baseURL: String
+
         /// Default request timeout
         public let timeoutInterval: TimeInterval
         
-        public init(token: String, organizationIdentifier: String? = nil, host: String = "api.openai.com", port: Int = 443, scheme: String = "https", timeoutInterval: TimeInterval = 60.0) {
+        /// Headers to add to requests
+        public let headers: [String: String]
+        
+        public init(token: String, organizationIdentifier: String? = nil, baseURL: String? = nil, timeoutInterval: TimeInterval = 60.0, headers: [String: String] = [:]) {
             self.token = token
             self.organizationIdentifier = organizationIdentifier
-            self.host = host
-            self.port = port
-            self.scheme = scheme
+            self.baseURL = baseURL ?? "https://api.openai.com"
             self.timeoutInterval = timeoutInterval
+            self.headers = headers
         }
     }
     
@@ -128,7 +129,8 @@ extension OpenAI {
         do {
             let request = try request.build(token: configuration.token, 
                                             organizationIdentifier: configuration.organizationIdentifier,
-                                            timeoutInterval: configuration.timeoutInterval)
+                                            timeoutInterval: configuration.timeoutInterval,
+                                            additionalHeaders: configuration.headers)
             let task = session.dataTask(with: request) { data, _, error in
                 if let error = error {
                     return completion(.failure(error))
@@ -153,7 +155,8 @@ extension OpenAI {
         do {
             let request = try request.build(token: configuration.token, 
                                             organizationIdentifier: configuration.organizationIdentifier,
-                                            timeoutInterval: configuration.timeoutInterval)
+                                            timeoutInterval: configuration.timeoutInterval,
+                                            additionalHeaders: configuration.headers)
             let session = StreamingSession<ResultType>(urlRequest: request)
             session.onReceiveContent = {_, object in
                 onResult(.success(object))
@@ -176,7 +179,8 @@ extension OpenAI {
         do {
             let request = try request.build(token: configuration.token, 
                                             organizationIdentifier: configuration.organizationIdentifier,
-                                            timeoutInterval: configuration.timeoutInterval)
+                                            timeoutInterval: configuration.timeoutInterval,
+                                            additionalHeaders: configuration.headers)
             
             let task = session.dataTask(with: request) { data, _, error in
                 if let error = error {
@@ -198,12 +202,7 @@ extension OpenAI {
 extension OpenAI {
     
     func buildURL(path: String) -> URL {
-        var components = URLComponents()
-        components.scheme = configuration.scheme
-        components.host = configuration.host
-        components.port = configuration.port
-        components.path = path
-        return components.url!
+        URL(string: configuration.baseURL)!.appendingPathComponent(path)
     }
 }
 
